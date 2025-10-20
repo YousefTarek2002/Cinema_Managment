@@ -1,0 +1,23 @@
+﻿@model Cinema.Models.Movie
+
+@{
+    ViewData["Title"] = "Delete Movie";
+}
+
+<h2 class="fw-bold text-danger mb-4">Deleting Movie...</h2>
+
+<form asp-action="DeleteConfirmed" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+</form>
+
+<script>
+    // يرسل الفورم تلقائياً بمجرد تحميل الصفحة
+    document.addEventListener("DOMContentLoaded", function () {
+        document.forms[0].submit();
+    });
+</script>
+
+<div class="alert alert-info">
+    Deleting <strong>@Model.Name</strong>...
+</div>

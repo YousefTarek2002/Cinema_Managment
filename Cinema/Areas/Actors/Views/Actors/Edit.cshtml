@@ -1,0 +1,44 @@
+﻿@model Cinema.Models.Actor
+@{
+    ViewData["Title"] = "Edit Actor";
+}
+
+<h2>Edit Actor</h2>
+
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label asp-for="FullName" class="form-label">Full Name</label>
+        <input asp-for="FullName" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Bio" class="form-label">Biography</label>
+        <textarea asp-for="Bio" class="form-control"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label>Image</label>
+        <input type="file" name="img" class="form-control" />
+        @if (!string.IsNullOrEmpty(Model.ImgUrl))
+        {
+            <img src="@Model.ImgUrl" width="100" class="mt-2 rounded" />
+        }
+    </div>
+
+    <div class="mb-3">
+        <label>Movies</label><br />
+        @foreach (var movie in ViewBag.Movies as List<Cinema.Models.Movie>)
+        {
+            var isChecked = Model.MovieActors?.Any(ma => ma.MovieId == movie.Id) == true;
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="SelectedMovies" value="@movie.Id" @(isChecked ? "checked" : "") />
+                <label class="form-check-label">@movie.Name</label>
+            </div>
+        }
+    </div>
+
+    <button type="submit" class="btn btn-success">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>

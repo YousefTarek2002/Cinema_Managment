@@ -1,0 +1,27 @@
+@model Cinema.Models.Category
+@{
+    ViewData["Title"] = "Category Details";
+}
+
+<div class="card p-4 shadow-sm">
+    <div class="row">
+        <div class="col-md-4">
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <img src="~/images/categories/@Model.ImageUrl" alt="@Model.Name" class="img-fluid rounded border mb-3" />
+            }
+            else
+            {
+                <p class="text-muted">No Image</p>
+            }
+        </div>
+        <div class="col-md-8">
+            <h3 class="fw-bold">@Model.Name</h3>
+            <p>@Model.Description</p>
+            <p><strong>Display Order:</strong> @Model.DisplayOrder</p>
+            <p><strong>Movies:</strong> @(Model.Movies?.Count ?? 0)</p>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+            <a asp-action="Index" class="btn btn-secondary">Back</a>
+        </div>
+    </div>
+</div>

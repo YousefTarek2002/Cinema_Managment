@@ -1,0 +1,19 @@
+﻿@model Cinema.Models.Cinemaa
+@{
+    ViewData["Title"] = "Delete Cinema";
+}
+
+<h2 class="fw-bold mb-4 text-danger"> Delete Cinema</h2>
+
+<div class="card shadow-sm p-4">
+    <h5>Are you sure you want to delete this cinema?</h5>
+    <p class="fw-bold">@Model.Name</p>
+
+    <img src="@Model.ImgUrl" width="200" class="rounded mb-3" />
+
+    <form asp-action="DeleteConfirmed" method="post">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

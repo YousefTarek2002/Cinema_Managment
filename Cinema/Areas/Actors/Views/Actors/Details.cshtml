@@ -1,0 +1,20 @@
+﻿@model Cinema.Models.Actor
+<h2>@Model.FullName</h2>
+
+@if (!string.IsNullOrEmpty(Model.ImgUrl))
+{
+    <img src="@Model.ImgUrl" width="200" class="rounded mb-3" />
+}
+
+<p>@Model.Bio</p>
+
+<h4>Movies</h4>
+<ul>
+    @foreach (var ma in Model.MovieActors ?? new List<Cinema.Models.MovieActor>())
+    {
+        <li>@ma.Movie?.Name</li>
+    }
+</ul>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+<a asp-action="Index" class="btn btn-secondary">Back</a>

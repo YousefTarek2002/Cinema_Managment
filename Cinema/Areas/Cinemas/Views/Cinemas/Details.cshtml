@@ -1,0 +1,99 @@
+﻿@model Cinema.Models.Cinemaa
+@{
+    ViewData["Title"] = "Cinema Details";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"> @Model.Name</h2>
+        <a asp-action="Index" class="btn btn-secondary"> Back to List</a>
+    </div>
+
+    <div class="row g-4">
+        <!-- الصورة الرئيسية -->
+        <div class="col-md-4 text-center">
+            @if (!string.IsNullOrEmpty(Model.ImgUrl))
+            {
+                <img src="@Model.ImgUrl" alt="@Model.Name" class="img-fluid rounded shadow-sm mb-3" />
+            }
+            else
+            {
+                <div class="bg-light p-5 text-muted rounded">No Image</div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.Logo))
+            {
+                <div class="mt-3">
+                    <h6 class="text-muted"> Logo</h6>
+                    <img src="@Model.Logo" width="100" class="rounded shadow-sm" />
+                </div>
+            }
+        </div>
+
+        <!-- بيانات السينما -->
+        <div class="col-md-8">
+            <div class="card shadow-sm p-4 mb-3">
+                <h5 class="fw-bold mb-2"> Description</h5>
+                <p>@Model.Description</p>
+            </div>
+
+            <div class="card shadow-sm p-4 mb-3">
+                <h5 class="fw-bold mb-2"> Location</h5>
+                <p>@(string.IsNullOrEmpty(Model.Location) ? "No location specified" : Model.Location)</p>
+            </div>
+
+            <div class="card shadow-sm p-4">
+                <h5 class="fw-bold mb-2"> Info</h5>
+                <ul class="list-unstyled mb-0">
+                    <li><strong>Created:</strong> @Model.Movies?.Count() movies linked</li>
+                    <li><strong>Added On:</strong> @Model.Id (ID)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎬 أفلام السينما -->
+    @if (Model.Movies != null && Model.Movies.Any())
+    {
+        <hr class="my-4" />
+        <h4 class="fw-bold mb-3"> Movies in this Cinema</h4>
+
+        <div class="row g-4">
+            @foreach (var movie in Model.Movies)
+            {
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    <div class="card h-100 shadow-sm">
+                        <img src="@movie.MainImg" class="card-img-top" style="height: 200px; object-fit: cover;" />
+                        <div class="card-body">
+                            <h6 class="fw-bold">@movie.Name</h6>
+                            <p class="text-muted small mb-2">@movie.Category?.Name</p>
+                            <a asp-area="Movies" asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id" class="btn btn-sm btn-primary w-100">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info mt-4">No movies are currently linked to this cinema.</div>
+    }
+</div>
+
+@section Styles {
+    <style>
+        .card {
+            border-radius: 15px;
+            transition: transform 0.25s, box-shadow 0.25s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+        }
+
+        img {
+            border-radius: 10px;
+        }
+    </style>
+}

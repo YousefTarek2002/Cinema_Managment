@@ -1,0 +1,87 @@
+﻿@model Cinema.Models.Movie
+@{
+    ViewData["Title"] = "Edit Movie";
+}
+
+<h2 class="fw-bold mb-4"> Edit Movie</h2>
+
+<form asp-action="Edit" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Price" class="form-label"></label>
+        <input asp-for="Price" class="form-control" />
+    </div>
+
+</div>
+
+<div class="mb-3">
+    <label>Category</label>
+    <select asp-for="CategoryId" class="form-select" 
+            asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name", Model?.CategoryId))">
+        <option value="">-- Select Category --</option>
+    </select>
+</div>
+
+<div class="mb-3">
+    <label>Cinema</label>
+    <select asp-for="CinemaId" class="form-select" 
+            asp-items="@(new SelectList(ViewBag.Cinemas, "Id", "Name", Model?.CinemaId))">
+        <option value="">-- Select Cinema --</option>
+    </select>
+</div>
+
+    <div class="mb-3">
+        <label>Actors</label>
+        <div class="form-check">
+            @foreach (var actor in ViewBag.Actors as List<Cinema.Models.Actor>)
+            {
+                var isChecked = Model.MovieActors != null && Model.MovieActors.Any(ma => ma.ActorId == actor.Id);
+                <input type="checkbox" name="SelectedActors" value="@actor.Id" class="form-check-input" id="actor_@actor.Id" @(isChecked ? "checked" : "") />
+                <label class="form-check-label me-3" for="actor_@actor.Id">@actor.FullName</label>
+            }
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label>Main Image</label>
+        <input type="file" name="MainImage" class="form-control" />
+        @if (!string.IsNullOrEmpty(Model.MainImg))
+        {
+            <img src="@Model.MainImg" style="height: 100px; object-fit: cover; margin-top:5px;" />
+        }
+    </div>
+
+    <div class="mb-3">
+        <label>Sub Images</label>
+        <input type="file" name="SubImages" multiple class="form-control" />
+        @if (!string.IsNullOrEmpty(Model.SubImages))
+        {
+            var images = Model.SubImages.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                @foreach (var img in images)
+                {
+                    <img src="@img" style="height: 80px; object-fit: cover; border-radius: 5px;" />
+                }
+            </div>
+        }
+    </div>
+
+    <button type="submit" class="btn btn-success">Update</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

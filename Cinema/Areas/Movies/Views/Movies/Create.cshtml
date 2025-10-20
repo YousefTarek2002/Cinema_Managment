@@ -1,0 +1,81 @@
+﻿@model Cinema.Models.Movie
+@{
+    ViewData["Title"] = "Add Movie";
+}
+
+<h2 class="fw-bold mb-4"> Add New Movie</h2>
+
+<form asp-action="Create" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Price" class="form-label"></label>
+        <input asp-for="Price" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Status" class="form-label"></label>
+        <select asp-for="Status" class="form-select">
+            <option value="true">Available</option>
+            <option value="false">Hidden</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Category</label>
+        <select asp-for="CategoryId" class="form-select"
+                asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name", Model?.CategoryId))">
+            <option value="">-- Select Category --</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Cinema</label>
+        <select asp-for="CinemaId" class="form-select"
+                asp-items="@(new SelectList(ViewBag.Cinemas, "Id", "Name", Model?.CinemaId))">
+            <option value="">-- Select Cinema --</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Actors</label>
+        <div class="form-check">
+            @foreach (var actor in ViewBag.Actors as List<Cinema.Models.Actor>)
+            {
+                var isChecked = Model?.MovieActors?.Any(ma => ma.ActorId == actor.Id) == true;
+                <input class="form-check-input" type="checkbox"
+                       name="SelectedActors" value="@actor.Id"
+                       @(isChecked ? "checked" : "") />
+                <label class="form-check-label">@actor.FullName</label>
+
+                <br />
+            }
+        </div>
+    </div>
+
+
+    <div class="mb-3">
+        <label>Main Image</label>
+        <input type="file" name="MainImage" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Sub Images</label>
+        <input type="file" name="SubImages" multiple class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
