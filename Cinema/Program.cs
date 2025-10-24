@@ -1,10 +1,13 @@
 ﻿using Cinema.Data;
+using Cinema.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped(typeof(Repository<>));
+
 
 // ✅ Configure EF Core connection
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

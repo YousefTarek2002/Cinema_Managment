@@ -1,167 +1,114 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Cinema.Data;
-using Cinema.Models;
+﻿using Cinema.Models;
+using Cinema.Repositories;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Cinema.Areas.Cinemas.Controllers
 {
     [Area("Cinemas")]
     public class CinemasController : Controller
     {
-        private readonly ApplicationDbContext _db;
-        private readonly IWebHostEnvironment _env;
+        private readonly CinemaRepository _cinemaRepository;
 
-        public CinemasController(ApplicationDbContext db, IWebHostEnvironment env)
+        public CinemasController(CinemaRepository cinemaRepository)
         {
-            _db = db;
-            _env = env;
+            _cinemaRepository = cinemaRepository;
         }
 
-        public IActionResult Index(string? search)
+        public async Task<IActionResult> Index()
         {
-            var query = _db.Cinemas
-                .Include(c => c.Movies)
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(search))
-            {
-                search = search.ToLower();
-                query = query.Where(c =>
-                    c.Name.ToLower().Contains(search) ||
-                    (c.Location != null && c.Location.ToLower().Contains(search)));
-            }
-
-            var cinemas = query
-                .OrderBy(c => c.Name)
-                .ToList();
-
-            ViewBag.Search = search;
+            var cinemas = await _cinemaRepository.GetAsync();
             return View(cinemas);
         }
 
-        public IActionResult Create()
-        {
-            return View();
-        }
+        public IActionResult Create() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Cinemaa cinema, IFormFile? Img, IFormFile? LogoFile)
+        public async Task<IActionResult> Create(Cinemaa cinema, IFormFile? img)
         {
             if (ModelState.IsValid)
             {
-                if (Img != null)
-                    cinema.ImgUrl = SaveImage(Img);
+                if (img != null)
+                {
+                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/cinemas");
+                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
-                if (LogoFile != null)
-                    cinema.Logo = SaveImage(LogoFile);
+                    var fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
+                    var filePath = Path.Combine(folder, fileName);
+                    using var stream = System.IO.File.Create(filePath);
+                    await img.CopyToAsync(stream);
+                    cinema.ImgUrl = fileName;
+                }
 
-                _db.Cinemas.Add(cinema);
-                _db.SaveChanges();
-
-                TempData["Success"] = " Cinema added successfully!";
+                cinema.CreatedAt = DateTime.Now;
+                await _cinemaRepository.CreateAsync(cinema);
+                TempData["Success"] = "Cinema added successfully!";
                 return RedirectToAction(nameof(Index));
             }
             return View(cinema);
         }
 
-        public IActionResult Edit(int? id)
+        public async Task<IActionResult> Edit(int id)
         {
-            if (id == null)
-                return NotFound();
-
-            var cinema = _db.Cinemas.Find(id);
-            if (cinema == null)
-                return NotFound();
-
+            var cinema = await _cinemaRepository.GetOneAsync(c => c.Id == id);
+            if (cinema == null) return NotFound();
             return View(cinema);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, Cinemaa cinema, IFormFile? Img, IFormFile? LogoFile)
+        public async Task<IActionResult> Edit(int id, Cinemaa cinema, IFormFile? img)
         {
-            if (id != cinema.Id)
-                return NotFound();
+            if (id != cinema.Id) return NotFound();
+            var cinemaInDb = await _cinemaRepository.GetOneAsync(c => c.Id == id);
+            if (cinemaInDb == null) return NotFound();
 
-            if (!ModelState.IsValid)
-                return View(cinema);
-
-            var existing = _db.Cinemas.AsNoTracking().FirstOrDefault(c => c.Id == id);
-            if (existing == null)
-                return NotFound();
-
-            if (Img != null)
-                cinema.ImgUrl = SaveImage(Img);
-            else
-                cinema.ImgUrl = existing.ImgUrl;
-
-            if (LogoFile != null)
-                cinema.Logo = SaveImage(LogoFile);
-            else
-                cinema.Logo = existing.Logo;
-
-            _db.Cinemas.Update(cinema);
-            _db.SaveChanges();
-
-            TempData["Success"] = " Cinema updated successfully!";
-            return RedirectToAction(nameof(Index));
-        }
-
-        public IActionResult Details(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var cinema = _db.Cinemas
-                .Include(c => c.Movies)
-                .FirstOrDefault(c => c.Id == id);
-
-            if (cinema == null)
-                return NotFound();
-
-            return View(cinema);
-        }
-
-        public IActionResult Delete(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var cinema = _db.Cinemas.Find(id);
-            if (cinema == null)
-                return NotFound();
-
-            return View(cinema);
-        }
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Delete(int id)
-        {
-            var cinema = _db.Cinemas.Find(id);
-            if (cinema == null)
-                return NotFound();
-
-            _db.Cinemas.Remove(cinema);
-            _db.SaveChanges();
-            return Ok(); 
-        }
-
-        private string SaveImage(IFormFile file)
-        {
-            string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads");
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            string uniqueFile = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-            string filePath = Path.Combine(uploadsFolder, uniqueFile);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            if (ModelState.IsValid)
             {
-                file.CopyTo(stream);
-            }
+                cinemaInDb.Name = cinema.Name;
+                cinemaInDb.Description = cinema.Description;
+                cinemaInDb.Location = cinema.Location;
+                cinemaInDb.UpdatedAt = DateTime.Now;
 
-            return "/uploads/" + uniqueFile;
+                if (img != null)
+                {
+                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/cinemas");
+                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+                    if (!string.IsNullOrEmpty(cinemaInDb.ImgUrl))
+                    {
+                        var oldPath = Path.Combine(folder, cinemaInDb.ImgUrl);
+                        if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+                    }
+
+                    var fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
+                    var filePath = Path.Combine(folder, fileName);
+                    using var stream = System.IO.File.Create(filePath);
+                    await img.CopyToAsync(stream);
+                    cinemaInDb.ImgUrl = fileName;
+                }
+
+                await _cinemaRepository.UpdateAsync(cinemaInDb);
+                TempData["Success"] = "Cinema updated successfully!";
+                return RedirectToAction(nameof(Index));
+            }
+            return View(cinema);
+        }
+
+        public async Task<IActionResult> Delete(int id)
+        {
+            var cinema = await _cinemaRepository.GetOneAsync(c => c.Id == id);
+            if (cinema == null) return NotFound();
+            return View(cinema);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            await _cinemaRepository.DeleteAsync(id);
+            TempData["Success"] = "Cinema deleted successfully!";
+            return RedirectToAction(nameof(Index));
         }
     }
 }

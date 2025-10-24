@@ -1,251 +1,117 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Cinema.Data;
-using Cinema.Models;
+﻿using Cinema.Models;
+using Cinema.Repositories;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Cinema.Areas.Movies.Controllers
 {
     [Area("Movies")]
     public class MoviesController : Controller
     {
-        private readonly ApplicationDbContext _db;
-        private readonly IWebHostEnvironment _env;
+        private readonly MovieRepository _movieRepository;
 
-        public MoviesController(ApplicationDbContext db, IWebHostEnvironment env)
+        public MoviesController(MovieRepository movieRepository)
         {
-            _db = db;
-            _env = env;
+            _movieRepository = movieRepository;
         }
 
-        public IActionResult Index(string? search)
+        // 📋 Index
+        public async Task<IActionResult> Index()
         {
-            var movies = _db.Movies
-                .Include(m => m.Category)
-                .Include(m => m.Cinema)
-                .Include(m => m.MovieActors)
-                    .ThenInclude(ma => ma.Actor)
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(search))
-                movies = movies.Where(m => m.Name.Contains(search));
-
-            return View(movies.ToList());
+            var movies = await _movieRepository.GetAsync();
+            return View(movies);
         }
 
-        public IActionResult Details(int? id)
-        {
-            if (id == null) return NotFound();
+        // ➕ Create (GET)
+        public IActionResult Create() => View();
 
-            var movie = _db.Movies
-                .Include(m => m.Category)
-                .Include(m => m.Cinema)
-                .Include(m => m.MovieActors)
-                    .ThenInclude(ma => ma.Actor)
-                .FirstOrDefault(m => m.Id == id);
-
-            if (movie == null) return NotFound();
-            return View(movie);
-        }
-
-        public IActionResult Create()
-        {
-            ViewBag.Categories = _db.Categories.ToList();
-            ViewBag.Cinemas = _db.Cinemas.ToList();
-            ViewBag.Actors = _db.Actors.ToList();
-            return View();
-        }
-
+        // ➕ Create (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Movie movie, IFormFile? MainImage, List<IFormFile>? SubImages, List<int>? SelectedActors)
+        public async Task<IActionResult> Create(Movie movie, IFormFile? img)
         {
             if (ModelState.IsValid)
             {
-                // حفظ الصورة الرئيسية
-                if (MainImage != null)
+                if (img != null && img.Length > 0)
                 {
-                    string uploadFolder = Path.Combine(_env.WebRootPath, "uploads/movies");
-                    Directory.CreateDirectory(uploadFolder);
-                    string fileName = Guid.NewGuid() + Path.GetExtension(MainImage.FileName);
-                    string fullPath = Path.Combine(uploadFolder, fileName);
-                    using var stream = new FileStream(fullPath, FileMode.Create);
-                    MainImage.CopyTo(stream);
-                    movie.MainImg = "/uploads/movies/" + fileName;
+                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/movies");
+                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+                    var fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
+                    var filePath = Path.Combine(folder, fileName);
+                    using var stream = System.IO.File.Create(filePath);
+                    await img.CopyToAsync(stream);
+                    movie.MainImg = fileName;
                 }
 
-                // حفظ الصور الفرعية
-                if (SubImages != null && SubImages.Count > 0)
-                {
-                    string subFolder = Path.Combine(_env.WebRootPath, "uploads/movies/sub");
-                    Directory.CreateDirectory(subFolder);
-
-                    List<string> savedPaths = new();
-                    foreach (var img in SubImages)
-                    {
-                        string subFile = Guid.NewGuid() + Path.GetExtension(img.FileName);
-                        string subFull = Path.Combine(subFolder, subFile);
-                        using var stream = new FileStream(subFull, FileMode.Create);
-                        img.CopyTo(stream);
-                        savedPaths.Add("/uploads/movies/sub/" + subFile);
-                    }
-                    movie.SubImages = string.Join(",", savedPaths);
-                }
-
-                if (SelectedActors != null)
-                {
-                    movie.MovieActors = SelectedActors.Select(aid => new MovieActor { ActorId = aid }).ToList();
-                }
-
-                movie.DateTime = DateTime.UtcNow;
-                _db.Movies.Add(movie);
-                _db.SaveChanges();
-
-                TempData["Success"] = " Movie added successfully!";
+                movie.DateTime = DateTime.Now;
+                await _movieRepository.CreateAsync(movie);
+                TempData["Success"] = "Movie added successfully!";
                 return RedirectToAction(nameof(Index));
             }
-
-            ViewBag.Categories = _db.Categories.ToList();
-            ViewBag.Cinemas = _db.Cinemas.ToList();
-            ViewBag.Actors = _db.Actors.ToList();
             return View(movie);
         }
 
-        public IActionResult Edit(int? id)
+        // ✏️ Edit
+        public async Task<IActionResult> Edit(int id)
         {
-            if (id == null) return NotFound();
-
-            var movie = _db.Movies
-                .Include(m => m.MovieActors)
-                .FirstOrDefault(m => m.Id == id);
-
+            var movie = await _movieRepository.GetOneAsync(m => m.Id == id);
             if (movie == null) return NotFound();
-
-            ViewBag.Categories = _db.Categories.ToList();
-            ViewBag.Cinemas = _db.Cinemas.ToList();
-            ViewBag.Actors = _db.Actors.ToList();
             return View(movie);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, Movie movie, IFormFile? MainImage, List<IFormFile>? SubImages, List<int>? SelectedActors)
+        public async Task<IActionResult> Edit(int id, Movie movie, IFormFile? img)
         {
             if (id != movie.Id) return NotFound();
-
-            var existing = _db.Movies
-                .Include(m => m.MovieActors)
-                .FirstOrDefault(m => m.Id == id);
-
-            if (existing == null) return NotFound();
+            var movieInDb = await _movieRepository.GetOneAsync(m => m.Id == id);
+            if (movieInDb == null) return NotFound();
 
             if (ModelState.IsValid)
             {
-                existing.Name = movie.Name;
-                existing.Description = movie.Description;
-                existing.Price = movie.Price;
-                existing.Status = movie.Status;
-                existing.CategoryId = movie.CategoryId;
-                existing.CinemaId = movie.CinemaId;
+                movieInDb.Description = movie.Description;
+                movieInDb.DateTime = DateTime.Now;
 
-                if (MainImage != null)
+                if (img != null)
                 {
-                    string uploadFolder = Path.Combine(_env.WebRootPath, "uploads/movies");
-                    Directory.CreateDirectory(uploadFolder);
-                    string fileName = Guid.NewGuid() + Path.GetExtension(MainImage.FileName);
-                    string fullPath = Path.Combine(uploadFolder, fileName);
-                    using var stream = new FileStream(fullPath, FileMode.Create);
-                    MainImage.CopyTo(stream);
-                    existing.MainImg = "/uploads/movies/" + fileName;
-                }
+                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/movies");
+                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
-                if (SubImages != null && SubImages.Count > 0)
-                {
-                    string subFolder = Path.Combine(_env.WebRootPath, "uploads/movies/sub");
-                    Directory.CreateDirectory(subFolder);
-
-                    List<string> savedPaths = new();
-                    foreach (var img in SubImages)
+                    if (!string.IsNullOrEmpty(movieInDb.MainImg))
                     {
-                        string subFile = Guid.NewGuid() + Path.GetExtension(img.FileName);
-                        string subFull = Path.Combine(subFolder, subFile);
-                        using var stream = new FileStream(subFull, FileMode.Create);
-                        img.CopyTo(stream);
-                        savedPaths.Add("/uploads/movies/sub/" + subFile);
+                        var oldPath = Path.Combine(folder, movieInDb.MainImg);
+                        if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
                     }
-                    existing.SubImages = string.Join(",", savedPaths);
+
+                    var fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
+                    var filePath = Path.Combine(folder, fileName);
+                    using var stream = System.IO.File.Create(filePath);
+                    await img.CopyToAsync(stream);
+                    movieInDb.MainImg = fileName;
                 }
 
-                existing.MovieActors.Clear();
-                if (SelectedActors != null)
-                {
-                    existing.MovieActors = SelectedActors.Select(aid => new MovieActor { MovieId = existing.Id, ActorId = aid }).ToList();
-                }
-
-                _db.Update(existing);
-                _db.SaveChanges();
-                TempData["Success"] = " Movie updated successfully!";
+                await _movieRepository.UpdateAsync(movieInDb);
+                TempData["Success"] = "Movie updated successfully!";
                 return RedirectToAction(nameof(Index));
             }
-
-            ViewBag.Categories = _db.Categories.ToList();
-            ViewBag.Cinemas = _db.Cinemas.ToList();
-            ViewBag.Actors = _db.Actors.ToList();
             return View(movie);
         }
 
-        public IActionResult Delete(int? id)
+        // 🗑 Delete
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id == null) return NotFound();
-
-            var movie = _db.Movies
-                .Include(m => m.Category)
-                .Include(m => m.Cinema)
-                .FirstOrDefault(m => m.Id == id);
-
+            var movie = await _movieRepository.GetOneAsync(m => m.Id == id);
             if (movie == null) return NotFound();
             return View(movie);
         }
-        [HttpPost]
+
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            try
-            {
-                var movie = _db.Movies.Find(id);
-                if (movie == null)
-                    return NotFound();
-
-                // حذف الصور إن وجدت
-                if (!string.IsNullOrEmpty(movie.MainImg))
-                {
-                    var mainPath = Path.Combine(_env.WebRootPath, movie.MainImg.TrimStart('/'));
-                    if (System.IO.File.Exists(mainPath))
-                        System.IO.File.Delete(mainPath);
-                }
-
-                if (!string.IsNullOrEmpty(movie.SubImages))
-                {
-                    var subs = movie.SubImages.Split(',');
-                    foreach (var img in subs)
-                    {
-                        var path = Path.Combine(_env.WebRootPath, img.TrimStart('/'));
-                        if (System.IO.File.Exists(path))
-                            System.IO.File.Delete(path);
-                    }
-                }
-
-                _db.Movies.Remove(movie);
-                _db.SaveChanges();
-                TempData["Success"] = "🎬 Movie deleted successfully!";
-            }
-            catch
-            {
-                TempData["Error"] = "Something went wrong while deleting.";
-            }
-
+            await _movieRepository.DeleteAsync(id);
+            TempData["Success"] = "Movie deleted successfully!";
             return RedirectToAction(nameof(Index));
         }
-
-
     }
 }

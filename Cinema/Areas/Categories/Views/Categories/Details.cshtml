@@ -1,27 +1,100 @@
-@model Cinema.Models.Category
+﻿@model Cinema.Models.Category
+
 @{
     ViewData["Title"] = "Category Details";
 }
 
-<div class="card p-4 shadow-sm">
-    <div class="row">
-        <div class="col-md-4">
-            @if (!string.IsNullOrEmpty(Model.ImageUrl))
-            {
-                <img src="~/images/categories/@Model.ImageUrl" alt="@Model.Name" class="img-fluid rounded border mb-3" />
-            }
-            else
-            {
-                <p class="text-muted">No Image</p>
-            }
-        </div>
-        <div class="col-md-8">
-            <h3 class="fw-bold">@Model.Name</h3>
-            <p>@Model.Description</p>
-            <p><strong>Display Order:</strong> @Model.DisplayOrder</p>
-            <p><strong>Movies:</strong> @(Model.Movies?.Count ?? 0)</p>
-            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
-            <a asp-action="Index" class="btn btn-secondary">Back</a>
+<div class="container mt-4">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold mb-0">📂 Category Details</h2>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    ← Back to List
+                </a>
+            </div>
+
+            <div class="row g-4">
+                <!-- الصورة -->
+                <div class="col-md-4 text-center">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <img src="~/images/categories/@Model.ImageUrl" alt="@Model.Name"
+                             class="img-fluid rounded-3 shadow-sm" style="max-height: 250px; object-fit: cover;" />
+
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center justify-content-center bg-light rounded-3"
+                             style="height: 250px;">
+                            <span class="text-muted">No Image Available</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- التفاصيل -->
+                <div class="col-md-8">
+                    <h3 class="fw-bold mb-3">@Model.Name</h3>
+
+                    <div class="mb-3">
+                        <span class="badge bg-secondary px-3 py-2 fs-6">📋 Description</span>
+                        <p class="mt-2 text-muted">@Model.Description</p>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 shadow-sm bg-light">
+                                <strong>Display Order:</strong>
+                                <div>@Model.DisplayOrder</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 shadow-sm bg-light">
+                                <strong>Status:</strong>
+                                <div>
+                                    @if (Model.UpdatedAt != null)
+                                    {
+                                        <span class="text-success fw-semibold">Updated</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-secondary">Not updated yet</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 shadow-sm bg-light">
+                                <strong>Created At:</strong>
+                                <div>@Model.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 shadow-sm bg-light">
+                                <strong>Updated At:</strong>
+                                <div>
+                                    @(Model.UpdatedAt != null
+                                                                        ? Model.UpdatedAt?.ToString("MMM dd, yyyy hh:mm tt")
+                                                                        : "—")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الأزرار -->
+            <div class="mt-4 d-flex justify-content-end gap-2">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary shadow-sm">
+                    ✏️ Edit
+                </a>
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger shadow-sm">
+                    🗑️ Delete
+                </a>
+            </div>
         </div>
     </div>
 </div>

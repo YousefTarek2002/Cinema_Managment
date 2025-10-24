@@ -1,29 +1,29 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Cinema.Data;
 using Cinema.Models;
+using Cinema.Repositories;
 
 namespace Cinema.Areas.Categories.Controllers
 {
     [Area("Categories")]
     public class CategoriesController : Controller
     {
-        private readonly ApplicationDbContext _db;
+        private readonly Repository<Category> _categoryRepository;
+        private readonly IWebHostEnvironment _env;
 
-        public CategoriesController(ApplicationDbContext db)
+        public CategoriesController(Repository<Category> categoryRepository, IWebHostEnvironment env)
         {
-            _db = db;
+            _categoryRepository = categoryRepository;
+            _env = env;
         }
 
-        public IActionResult Index(string? search, string sortOrder = "asc")
+        // 📋 Index
+        public async Task<IActionResult> Index(string? search, string sortOrder = "asc")
         {
-            var categories = _db.Categories
-                .Include(c => c.Movies)
-                .AsQueryable();
+            var categories = await _categoryRepository.GetAsync();
 
             if (!string.IsNullOrEmpty(search))
             {
-                categories = categories.Where(c => c.Name.Contains(search.Trim()));
+                categories = categories.Where(c => c.Name.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase));
                 ViewBag.Search = search;
             }
 
@@ -35,34 +35,34 @@ namespace Cinema.Areas.Categories.Controllers
             return View(categories.ToList());
         }
 
-        public IActionResult Create()
-        {
-            return View();
-        }
+        // ➕ Create (GET)
+        public IActionResult Create() => View();
 
+        // ➕ Create (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Category category, IFormFile? img)
+        public async Task<IActionResult> Create(Category category, IFormFile? img)
         {
             if (ModelState.IsValid)
             {
                 if (img != null && img.Length > 0)
                 {
-                    var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/categories");
+                    var folderPath = Path.Combine(_env.WebRootPath, "images/categories");
                     if (!Directory.Exists(folderPath))
                         Directory.CreateDirectory(folderPath);
 
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(img.FileName);
+                    var fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
                     var filePath = Path.Combine(folderPath, fileName);
-                    using (var stream = System.IO.File.Create(filePath))
-                        img.CopyTo(stream);
+
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await img.CopyToAsync(stream);
 
                     category.ImageUrl = fileName;
                 }
 
                 category.CreatedAt = DateTime.Now;
-                _db.Categories.Add(category);
-                _db.SaveChanges();
+                await _categoryRepository.CreateAsync(category);
+
                 TempData["Success"] = "Category added successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -70,23 +70,25 @@ namespace Cinema.Areas.Categories.Controllers
             return View(category);
         }
 
-        public IActionResult Edit(int? id)
+        // ✏️ Edit (GET)
+        public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
 
-            var category = _db.Categories.Find(id);
+            var category = await _categoryRepository.GetOneAsync(c => c.Id == id);
             if (category == null) return NotFound();
 
             return View(category);
         }
 
+        // ✏️ Edit (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, Category category, IFormFile? img)
+        public async Task<IActionResult> Edit(int id, Category category, IFormFile? img)
         {
             if (id != category.Id) return NotFound();
 
-            var catInDb = _db.Categories.Find(id);
+            var catInDb = await _categoryRepository.GetOneAsync(c => c.Id == id);
             if (catInDb == null) return NotFound();
 
             if (ModelState.IsValid)
@@ -96,13 +98,14 @@ namespace Cinema.Areas.Categories.Controllers
                 catInDb.DisplayOrder = category.DisplayOrder;
                 catInDb.UpdatedAt = DateTime.Now;
 
+                // ✅ تعديل الصورة (إن وُجدت)
                 if (img != null && img.Length > 0)
                 {
-                    var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/categories");
+                    var folderPath = Path.Combine(_env.WebRootPath, "images/categories");
+
                     if (!Directory.Exists(folderPath))
                         Directory.CreateDirectory(folderPath);
 
-                    // حذف الصورة القديمة
                     if (!string.IsNullOrEmpty(catInDb.ImageUrl))
                     {
                         var oldPath = Path.Combine(folderPath, catInDb.ImageUrl);
@@ -110,17 +113,15 @@ namespace Cinema.Areas.Categories.Controllers
                             System.IO.File.Delete(oldPath);
                     }
 
-                    // حفظ الجديدة
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(img.FileName);
+                    var fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
                     var filePath = Path.Combine(folderPath, fileName);
-                    using (var stream = System.IO.File.Create(filePath))
-                        img.CopyTo(stream);
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await img.CopyToAsync(stream);
 
                     catInDb.ImageUrl = fileName;
                 }
 
-                _db.Update(catInDb);
-                _db.SaveChanges();
+                await _categoryRepository.UpdateAsync(catInDb);
                 TempData["Success"] = "Category updated successfully!";
                 return RedirectToAction(nameof(Index));
             }
@@ -128,42 +129,36 @@ namespace Cinema.Areas.Categories.Controllers
             return View(category);
         }
 
-        public IActionResult Details(int? id)
+        // 🔍 Details
+        public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
 
-            var category = _db.Categories
-                .Include(c => c.Movies)
-                .FirstOrDefault(c => c.Id == id);
-
+            var category = await _categoryRepository.GetOneAsync(c => c.Id == id);
             if (category == null) return NotFound();
 
             return View(category);
         }
 
-        public IActionResult Delete(int? id)
+        // 🗑 Delete (GET)
+        public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
 
-            var category = _db.Categories.FirstOrDefault(c => c.Id == id);
+            var category = await _categoryRepository.GetOneAsync(c => c.Id == id);
             if (category == null) return NotFound();
 
             return View(category);
         }
 
-        [HttpPost]
+        // 🗑 Delete (POST)
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var cat = _db.Categories.Find(id);
-            if (cat == null)
-                return NotFound();
-
-            _db.Categories.Remove(cat);
-            _db.SaveChanges();
+            await _categoryRepository.DeleteAsync(id);
             TempData["Success"] = "Category deleted successfully!";
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Index));
         }
-
     }
 }

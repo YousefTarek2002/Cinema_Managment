@@ -1,216 +1,119 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Cinema.Models;
+using Cinema.Repositories;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Cinema.Data;
-using Cinema.Models;
 
 namespace Cinema.Areas.Actors.Controllers
 {
     [Area("Actors")]
     public class ActorsController : Controller
     {
-        private readonly ApplicationDbContext _db;
-        private readonly IWebHostEnvironment _env;
+        private readonly ActorRepository _actorRepository;
 
-        public ActorsController(ApplicationDbContext db, IWebHostEnvironment env)
+        public ActorsController(ActorRepository actorRepository)
         {
-            _db = db;
-            _env = env;
+            _actorRepository = actorRepository;
         }
 
-        public IActionResult Index(string? searchName, int? minMovies, int? maxMovies)
+        // 📋 Index
+        public async Task<IActionResult> Index()
         {
-            var actors = _db.Actors
-                .Include(a => a.MovieActors)
-                .ThenInclude(ma => ma.Movie)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(searchName))
-                actors = actors.Where(a => a.FullName.Contains(searchName));
-
-            if (minMovies.HasValue)
-                actors = actors.Where(a => a.MovieActors.Count >= minMovies.Value);
-
-            if (maxMovies.HasValue)
-                actors = actors.Where(a => a.MovieActors.Count <= maxMovies.Value);
-
-            ViewBag.SearchName = searchName;
-            ViewBag.MinMovies = minMovies;
-            ViewBag.MaxMovies = maxMovies;
-
-            return View(actors.ToList());
+            var actors = await _actorRepository.GetAsync();
+            return View(actors);
         }
 
+        // ➕ Create (GET)
+        public IActionResult Create() => View();
 
-        public IActionResult Details(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var actor = _db.Actors
-                .Include(a => a.MovieActors)
-                .ThenInclude(ma => ma.Movie)
-                .FirstOrDefault(a => a.Id == id);
-
-            if (actor == null) return NotFound();
-
-            return View(actor);
-        }
-
-        public IActionResult Create()
-        {
-            ViewBag.Movies = _db.Movies.ToList();
-            return View();
-        }
-
+        // ➕ Create (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Actor actor, IFormFile? img, List<int>? SelectedMovies)
+        public async Task<IActionResult> Create(Actor actor, IFormFile? img)
         {
             if (ModelState.IsValid)
             {
                 if (img != null && img.Length > 0)
                 {
-                    string folder = Path.Combine(_env.WebRootPath, "images/actors");
-                    Directory.CreateDirectory(folder);
+                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/actors");
+                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
-                    string fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
-                    string path = Path.Combine(folder, fileName);
-
-                    using var stream = new FileStream(path, FileMode.Create);
-                    img.CopyTo(stream);
-
-                    actor.ImgUrl = "/images/actors/" + fileName;
+                    var fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
+                    var filePath = Path.Combine(folder, fileName);
+                    using var stream = System.IO.File.Create(filePath);
+                    await img.CopyToAsync(stream);
+                    actor.ImgUrl = fileName;
                 }
 
-                _db.Actors.Add(actor);
-                _db.SaveChanges();
-
-                if (SelectedMovies != null && SelectedMovies.Count > 0)
-                {
-                    foreach (var movieId in SelectedMovies)
-                    {
-                        _db.MovieActors.Add(new MovieActor
-                        {
-                            ActorId = actor.Id,
-                            MovieId = movieId
-                        });
-                    }
-                    _db.SaveChanges();
-                }
-
+                actor.CreatedAt = DateTime.Now;
+                await _actorRepository.CreateAsync(actor);
+                TempData["Success"] = "Actor added successfully!";
                 return RedirectToAction(nameof(Index));
             }
-
-            ViewBag.Movies = _db.Movies.ToList();
             return View(actor);
         }
 
-        public IActionResult Edit(int? id)
+        // ✏️ Edit (GET)
+        public async Task<IActionResult> Edit(int id)
         {
-            if (id == null) return NotFound();
-
-            var actor = _db.Actors
-                .Include(a => a.MovieActors)
-                .FirstOrDefault(a => a.Id == id);
-
+            var actor = await _actorRepository.GetOneAsync(a => a.Id == id);
             if (actor == null) return NotFound();
-
-            ViewBag.Movies = _db.Movies.ToList();
             return View(actor);
         }
 
+        // ✏️ Edit (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, Actor actor, IFormFile? img, List<int>? SelectedMovies)
+        public async Task<IActionResult> Edit(int id, Actor actor, IFormFile? img)
         {
             if (id != actor.Id) return NotFound();
-
-            var actorInDb = _db.Actors
-                .Include(a => a.MovieActors)
-                .FirstOrDefault(a => a.Id == id);
-
+            var actorInDb = await _actorRepository.GetOneAsync(a => a.Id == id);
             if (actorInDb == null) return NotFound();
 
             if (ModelState.IsValid)
             {
                 actorInDb.FullName = actor.FullName;
                 actorInDb.Bio = actor.Bio;
+                actorInDb.UpdatedAt = DateTime.Now;
 
-                if (img != null && img.Length > 0)
+                if (img != null)
                 {
-                    string folder = Path.Combine(_env.WebRootPath, "images/actors");
-                    Directory.CreateDirectory(folder);
+                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/actors");
+                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
                     if (!string.IsNullOrEmpty(actorInDb.ImgUrl))
                     {
-                        string oldPath = Path.Combine(_env.WebRootPath, actorInDb.ImgUrl.TrimStart('/').Replace("/", "\\"));
-                        if (System.IO.File.Exists(oldPath))
-                            System.IO.File.Delete(oldPath);
+                        var oldPath = Path.Combine(folder, actorInDb.ImgUrl);
+                        if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
                     }
 
-                    string fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
-                    string path = Path.Combine(folder, fileName);
-                    using var stream = new FileStream(path, FileMode.Create);
-                    img.CopyTo(stream);
-                    actorInDb.ImgUrl = "/images/actors/" + fileName;
+                    var fileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
+                    var filePath = Path.Combine(folder, fileName);
+                    using var stream = System.IO.File.Create(filePath);
+                    await img.CopyToAsync(stream);
+                    actorInDb.  ImgUrl = fileName;
                 }
 
-                var existingMovies = actorInDb.MovieActors.ToList();
-                foreach (var ma in existingMovies)
-                    _db.MovieActors.Remove(ma);
-
-                if (SelectedMovies != null && SelectedMovies.Count > 0)
-                {
-                    foreach (var movieId in SelectedMovies)
-                    {
-                        _db.MovieActors.Add(new MovieActor
-                        {
-                            ActorId = actorInDb.Id,
-                            MovieId = movieId
-                        });
-                    }
-                }
-
-                _db.SaveChanges();
+                await _actorRepository.UpdateAsync(actorInDb);
+                TempData["Success"] = "Actor updated successfully!";
                 return RedirectToAction(nameof(Index));
             }
-
-            ViewBag.Movies = _db.Movies.ToList();
-            return View(actorInDb);
+            return View(actor);
         }
 
-        public IActionResult Delete(int? id)
+        // 🗑 Delete
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id == null) return NotFound();
-
-            var actor = _db.Actors.Find(id);
+            var actor = await _actorRepository.GetOneAsync(a => a.Id == id);
             if (actor == null) return NotFound();
-
             return View(actor);
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var actor = _db.Actors
-                .Include(a => a.MovieActors)
-                .FirstOrDefault(a => a.Id == id);
-
-            if (actor != null)
-            {
-                if (!string.IsNullOrEmpty(actor.ImgUrl))
-                {
-                    string path = Path.Combine(_env.WebRootPath, actor.ImgUrl.TrimStart('/').Replace("/", "\\"));
-                    if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
-                }
-
-                foreach (var ma in actor.MovieActors.ToList())
-                    _db.MovieActors.Remove(ma);
-
-                _db.Actors.Remove(actor);
-                _db.SaveChanges();
-            }
-
+            await _actorRepository.DeleteAsync(id);
+            TempData["Success"] = "Actor deleted successfully!";
             return RedirectToAction(nameof(Index));
         }
     }

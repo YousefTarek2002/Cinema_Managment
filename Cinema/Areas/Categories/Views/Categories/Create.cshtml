@@ -3,30 +3,42 @@
     ViewData["Title"] = "Add Category";
 }
 
-<h2 class="fw-bold mb-3"> Add New Category</h2>
-
-<form asp-action="Create" method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-4">➕ Add New Category</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            ← Back to List
+        </a>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-    </div>
 
-    <div class="mb-3">
-        <label asp-for="DisplayOrder" class="form-label">Display Order</label>
-        <input asp-for="DisplayOrder" class="form-control" type="number" />
-    </div>
+    <form asp-action="Create" enctype="multipart/form-data">
+        <div class="card shadow-sm p-4">
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
 
-    <div class="mb-3">
-        <label class="form-label">Category Image</label>
-        <input type="file" name="img" class="form-control" />
-    </div>
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control"></textarea>
+            </div>
 
-    <button type="submit" class="btn btn-primary">Save</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>
+            <div class="mb-3">
+                <label asp-for="DisplayOrder" class="form-label"></label>
+                <input asp-for="DisplayOrder" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Upload Image</label>
+                <input type="file" name="img" class="form-control" />
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a asp-action="Index" class="btn btn-secondary">Back</a>
+                <button type="submit" class="btn btn-primary px-4">Save</button>
+            </div>
+        </div>
+    </form>
+</div>
