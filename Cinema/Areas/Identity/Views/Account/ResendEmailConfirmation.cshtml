@@ -1,0 +1,24 @@
+﻿@model Cinema.ViewModels.ResendEmailConfirmationVM
+@{
+    ViewData["Title"] = "Resend Email Confirmation";
+}
+<div class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg rounded-4">
+            <div class="card-body p-5">
+                <h3 class="text-center mb-4">Resend Email Confirmation</h3>
+                <form asp-action="ResendEmailConfirmation" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="UserNameOREmail" class="form-label"></label>
+                        <input asp-for="UserNameOREmail" class="form-control" />
+                        <span asp-validation-for="UserNameOREmail" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill mt-2">Send Email</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
