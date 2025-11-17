@@ -1,0 +1,36 @@
+﻿@model Cinema.Models.Cinemaa
+@{
+    ViewData["Title"] = "Delete Cinema";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-3 text-danger">Delete Cinema</h2>
+
+    <div class="alert alert-warning">
+        Are you sure you want to delete the cinema: <strong>@Model.Name</strong>?
+    </div>
+
+    <div class="card mb-3" style="max-width: 540px;">
+        <div class="row g-0">
+            <div class="col-md-4">
+                @if (!string.IsNullOrEmpty(Model.ImgUrl))
+                {
+                    <img src="@Url.Content($"~/images/cinemas/{Model.ImgUrl}")" class="img-fluid rounded-start" />
+                }
+            </div>
+            <div class="col-md-8">
+                <div class="card-body">
+                    <p class="card-text"><strong>Description:</strong> @Model.Description</p>
+                    <p class="card-text"><strong>Location:</strong> @Model.Location</p>
+                    <p class="card-text"><small class="text-muted">Created At: @Model.CreatedAt?.ToString("dd MMM yyyy")</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form asp-action="DeleteConfirmed" method="post">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>

@@ -1,0 +1,50 @@
+﻿@model Cinema.Models.ApplicationUser
+
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<h2>Edit User</h2>
+
+<!-- Success / Error Notifications -->
+@if (TempData["success-notification"] != null)
+{
+    <div class="alert alert-success">@TempData["success-notification"]</div>
+}
+@if (TempData["error-notification"] != null)
+{
+    <div class="alert alert-danger">@TempData["error-notification"]</div>
+}
+
+<form asp-action="Edit" method="post">
+    <!-- Hidden Id -->
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="UserName" class="form-label"></label>
+        <input asp-for="UserName" class="form-control" />
+        <span asp-validation-for="UserName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a asp-area="Identity" asp-controller="User" asp-action="Index" class="btn btn-secondary">Back</a>
+    </div>
+</form>
+
+<!-- Optional: Validation Scripts -->
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

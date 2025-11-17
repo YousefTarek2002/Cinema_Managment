@@ -1,0 +1,90 @@
+﻿@model IEnumerable<Cinema.Models.Movie>
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4">Admin Dashboard</h2>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Movies</h5>
+                    <p class="card-text fs-3">@ViewBag.MovieCount</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Actors</h5>
+                    <p class="card-text fs-3">@ViewBag.ActorCount</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-warning h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Cinemas</h5>
+                    <p class="card-text fs-3">@ViewBag.CinemaCount</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-danger h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Categories</h5>
+                    <p class="card-text fs-3">@ViewBag.CategoryCount</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latest Movies Table -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            Latest 5 Movies
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Cinema</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var movie in Model)
+                    {
+                        <tr>
+                            <td>@movie.Name</td>
+                            <td>@movie.Category?.Name</td>
+                            <td>@movie.Cinema?.Name</td>
+                            <td>@movie.Price.ToString("0.00")</td>
+                            <td>
+                                @if (movie.Status)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td>@movie.DateTime.ToString("yyyy-MM-dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

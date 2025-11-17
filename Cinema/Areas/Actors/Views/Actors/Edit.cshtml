@@ -1,0 +1,40 @@
+﻿@model Cinema.Models.Actor
+@{
+    ViewData["Title"] = "Edit Actor";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-3">Edit Actor</h2>
+
+    <form asp-action="Edit" enctype="multipart/form-data">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label asp-for="FullName" class="form-label"></label>
+            <input asp-for="FullName" class="form-control" placeholder="Actor Full Name" />
+            <span asp-validation-for="FullName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Bio" class="form-label"></label>
+            <textarea asp-for="Bio" class="form-control" rows="3" placeholder="Short Bio"></textarea>
+            <span asp-validation-for="Bio" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Actor Image</label>
+            <input type="file" name="img" class="form-control" />
+            @if (!string.IsNullOrEmpty(Model.ImgUrl))
+            {
+                <img src="@Url.Content($"~/images/actors/{Model.ImgUrl}")" class="mt-2 rounded" width="120" />
+            }
+        </div>
+
+        <button type="submit" class="btn btn-warning">Update</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

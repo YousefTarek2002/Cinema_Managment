@@ -1,0 +1,25 @@
+﻿@model Cinema.ViewModels.UserRolesVM
+
+@{
+    ViewData["Title"] = "Assign Roles";
+}
+
+<h2>Assign Roles to @Model.UserName</h2>
+
+<form asp-action="AssignRoles" method="post">
+    <input type="hidden" asp-for="UserId" />
+
+    <div class="mb-3">
+        @for (int i = 0; i < Model.Roles.Count; i++)
+        {
+            <div class="form-check">
+                <input asp-for="Roles[i].Selected" class="form-check-input" />
+                <input type="hidden" asp-for="Roles[i].RoleName" />
+                <label class="form-check-label">@Model.Roles[i].RoleName</label>
+            </div>
+        }
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Roles</button>
+    <a asp-area="Identity" asp-controller="User" asp-action="Index" class="btn btn-secondary">Back</a>
+</form>

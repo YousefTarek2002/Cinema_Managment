@@ -1,0 +1,78 @@
+﻿@model IEnumerable<Cinema.Models.Actor>
+@{
+    ViewData["Title"] = "Actors";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold">Actors</h2>
+        <a asp-action="Create" class="btn btn-success">+ Add Actor</a>
+    </div>
+
+    <!-- Success Alert -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    <form method="get" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Search actors..." />
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+    </form>
+
+    <table class="table table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Bio</th>
+                <th>Image</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var actor in Model)
+            {
+                <tr>
+                    <td>@actor.Id</td>
+                    <td>@actor.FullName</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(actor.Bio))
+                        {
+                            var shortBio = actor.Bio.Length > 50 ? actor.Bio.Substring(0, 50) + "..." : actor.Bio;
+                            <span title="@actor.Bio">@shortBio</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(actor.ImgUrl))
+                        {
+                            <img src="@Url.Content($"~/images/actors/{actor.ImgUrl}")" width="80" class="rounded-circle border border-2 border-secondary" />
+                        }
+                    </td>
+                    <td>@actor.CreatedAt?.ToString("dd MMM yyyy")</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@actor.Id" class="btn btn-info btn-sm me-1">Details</a>
+                        <a asp-action="Edit" asp-route-id="@actor.Id" class="btn btn-warning btn-sm me-1">Edit</a>
+                        <form asp-action="Delete" asp-route-id="@actor.Id" method="post" style="display:inline;"
+                              onsubmit="return confirm('Are you sure you want to delete this actor?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+    table.table-hover tbody tr:hover {
+        background-color: rgba(0,123,255,0.1);
+    }
+</style>

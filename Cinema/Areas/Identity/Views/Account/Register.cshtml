@@ -1,0 +1,85 @@
+﻿@model Cinema.ViewModels.RegisterVM
+@{
+    ViewData["Title"] = "Register";
+}
+
+@if (TempData["success-notification"] != null)
+{
+    <div class="alert alert-success">@TempData["success-notification"]</div>
+}
+@if (TempData["error-notification"] != null)
+{
+    <div class="alert alert-danger">@TempData["error-notification"]</div>
+}
+
+<div class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+    <div class="col-xl-8 col-lg-9 col-md-11 col-12 py-4">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden" style="min-height: 650px;">
+            <div class="row g-0 h-100">
+
+                <div class="col-md-5 text-center bg-primary text-white d-flex flex-column justify-content-between">
+                    <div class="p-4 pt-md-5">
+                        <a class="text-white fs-3 fw-bold d-inline-block mb-2 text-decoration-none"
+                           asp-area="" asp-controller="Home" asp-action="Index">Cinema</a>
+                        <p class="opacity-75">Create a new account and join us.</p>
+                    </div>
+                    <div class="pb-4">
+                        <p class="mb-2 fw-light">Already have an account?</p>
+                        <a class="btn btn-outline-light px-4 rounded-pill" asp-action="Login">Login</a>
+                    </div>
+                </div>
+
+                <div class="col-md-7 d-flex align-items-center bg-white">
+                    <div class="p-5 w-100">
+
+                        <h2 class="fw-bold mb-4 text-center">Register</h2>
+
+                        <form method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="Name"></label>
+                                <input asp-for="Name" class="form-control form-control-lg rounded-pill" />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Email"></label>
+                                <input asp-for="Email" class="form-control form-control-lg rounded-pill" />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="UserName"></label>
+                                <input asp-for="UserName" class="form-control form-control-lg rounded-pill" />
+                                <span asp-validation-for="UserName" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Password"></label>
+                                <input asp-for="Password" class="form-control form-control-lg rounded-pill" type="password" />
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="ConfirmPassword"></label>
+                                <input asp-for="ConfirmPassword" class="form-control form-control-lg rounded-pill" type="password" />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                            </div>
+
+                            <button class="btn btn-primary w-100 btn-lg rounded-pill" type="submit">
+                                Register
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

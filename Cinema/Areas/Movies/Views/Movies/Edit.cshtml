@@ -1,0 +1,71 @@
+﻿@model Cinema.Models.Movie
+@{
+    ViewData["Title"] = "Edit Movie";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-3">Edit Movie</h2>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Name</label>
+            <input asp-for="Name" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label">Description</label>
+            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Price" class="form-label">Price</label>
+            <input asp-for="Price" class="form-control" type="number" step="0.01"/>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input asp-for="Status" class="form-check-input" />
+            <label asp-for="Status" class="form-check-label">Active</label>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Category</label>
+            <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.Categories"></select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Cinema</label>
+            <select asp-for="CinemaId" class="form-select" asp-items="ViewBag.Cinemas"></select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Current Main Image</label><br />
+            @if (!string.IsNullOrEmpty(Model.MainImg))
+            {
+                <img src="@Url.Content($"~/images/movies/main/{Model.MainImg}")" width="100" class="rounded mb-2" />
+            }
+            <input type="file" name="mainImg" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Current Sub Images</label><br />
+            @if (!string.IsNullOrEmpty(Model.SubImages))
+            {
+                var subs = Model.SubImages.Split(',');
+                foreach(var sub in subs)
+                {
+                    <img src="@Url.Content($"~/images/movies/sub/{sub}")" width="80" class="rounded me-2 mb-2" />
+                }
+            }
+            <input type="file" name="subImgs" multiple class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-warning">Update</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

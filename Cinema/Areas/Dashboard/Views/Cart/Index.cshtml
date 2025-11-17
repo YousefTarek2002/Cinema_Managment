@@ -1,0 +1,81 @@
+﻿@model IEnumerable<Cinema.Models.Cart>
+@{
+    ViewData["Title"] = "My Cart";
+}
+
+<h2 class="mb-3">My Cart</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning">Your cart is empty.</div>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Movie</th>
+                <th>Price</th>
+                <th>Count</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Movie.Name</td>
+                    <td>@item.Price.ToString("0.00") EGP</td>
+                    <td>@item.Count</td>
+                    <td>@(item.Price* item.Count)EGP</td>
+
+                    <td>
+                        <form method="post" asp-area="Dashboard" asp-action="IncrementCount" asp-route-movieId="@item.MovieId" style="display:inline-block">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-success">+</button>
+                        </form>
+
+                        <form method="post" asp-area="Dashboard" asp-action="DecrementCount" asp-route-movieId="@item.MovieId" style="display:inline-block">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-warning">-</button>
+                        </form>
+
+                        <form method="post" asp-area="Dashboard" asp-action="Delete" asp-route-movieId="@item.MovieId" style="display:inline-block">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this item?');">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="mt-3">
+        <h4>
+            Total: <strong>@Model.Sum(x => x.Price * x.Count).ToString("0.00") EGP</strong>
+        </h4>
+    </div>
+
+    <hr />
+
+    <!-- ✅ Promo Code Form -->
+    <form asp-area="Dashboard" asp-action="ApplyPromo" method="post" class="row g-2 mb-3">
+        @Html.AntiForgeryToken()
+        <div class="col-md-4">
+            <input type="text" name="code" class="form-control" placeholder="Enter promo code" required />
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-info">Apply</button>
+        </div>
+    </form>
+
+    <!-- ✅ Stripe Checkout -->
+    <form asp-area="Dashboard" asp-action="Pay" method="post">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-primary btn-lg">
+            Checkout with Stripe
+        </button>
+    </form>
+}

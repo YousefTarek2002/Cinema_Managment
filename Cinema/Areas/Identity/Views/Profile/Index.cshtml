@@ -1,0 +1,60 @@
+﻿@model Cinema.ViewModels.ApplicationUserVM
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<h2 class="mb-4">👤 Manage Profile</h2>
+
+@if (TempData["success-notification"] != null)
+{
+    <div class="alert alert-success">@TempData["success-notification"]</div>
+}
+@if (TempData["error-notification"] != null)
+{
+    <div class="alert alert-danger">@TempData["error-notification"]</div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+
+        <form asp-action="UpdateProfile" method="post" class="card p-3 mb-3 shadow">
+            <h5>📝 Edit Information</h5>
+            <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <input asp-for="FullName" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input asp-for="Email" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Phone Number</label>
+                <input asp-for="PhoneNumber" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Address</label>
+                <input asp-for="Address" class="form-control" />
+            </div>
+
+            <button class="btn btn-primary w-100">Save Changes ✅</button>
+        </form>
+
+        <form asp-action="UpdatePassword" method="post" class="card p-3 shadow">
+            <h5>🔐 Change Password</h5>
+            <div class="mb-3">
+                <label class="form-label">Current Password</label>
+                <input asp-for="CurrentPassword" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">New Password</label>
+                <input asp-for="NewPassword" class="form-control" />
+            </div>
+
+            <button class="btn btn-warning w-100">Update Password 🔄</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,87 @@
+﻿@model IEnumerable<Cinema.ViewModels.UserWithRolesVM>
+
+@{
+    ViewData["Title"] = "Manage Users";
+    var q = ViewData["Query"] as string;
+    int page = (int)(ViewData["Page"] ?? 1);
+    int pageSize = (int)(ViewData["PageSize"] ?? 25);
+    int total = (int)(ViewData["Total"] ?? Model.Count());
+}
+
+<h2>Manage Users</h2>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <input name="q" value="@q" class="form-control" placeholder="Search by user, email or name" />
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary">Search</button>
+    </div>
+    <div class="col-auto">
+        <a class="btn btn-success" asp-area="Identity" asp-controller="User" asp-action="Create">Create User</a>
+    </div>
+</form>
+
+@if (TempData["success-notification"] != null)
+{
+    <div class="alert alert-success">@TempData["success-notification"]</div>
+}
+@if (TempData["error-notification"] != null)
+{
+    <div class="alert alert-danger">@TempData["error-notification"]</div>
+}
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>UserName</th>
+            <th>Roles</th>
+            <th>Status</th>
+            <th style="width:220px">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        var user = item.User;
+        var roles = item.Roles;
+        var isLocked = user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow;
+
+        <tr>
+            <td>@user.Name</td>
+            <td>@user.Email</td>
+            <td>@user.UserName</td>
+            <td>@string.Join(", ", roles)</td>
+            <td>@(isLocked ? "Locked" : "Active")</td>
+            <td>
+                <a class="btn btn-primary btn-sm" asp-area="Identity" asp-controller="User" asp-action="Edit" asp-route-id="@user.Id">Edit</a>
+                <a class="btn btn-info btn-sm" asp-area="Identity" asp-controller="User" asp-action="AssignRoles" asp-route-id="@user.Id">Roles</a>
+                <a class="btn btn-warning btn-sm" asp-area="Identity" asp-controller="User" asp-action="LockUnLock" asp-route-id="@user.Id">
+                    @(isLocked ? "Unlock" : "Lock")
+                </a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        @if (page > 1)
+        {
+            <li class="page-item">
+                <a class="page-link"
+                   href="@Url.Action("Index", "User", new { area="Identity", q = q, page = page - 1, pageSize = pageSize })">Previous</a>
+            </li>
+        }
+        @if ((page * pageSize) < total)
+        {
+            <li class="page-item">
+                <a class="page-link"
+                   href="@Url.Action("Index", "User", new { area="Identity", q = q, page = page + 1, pageSize = pageSize })">Next</a>
+            </li>
+        }
+    </ul>
+</nav>
